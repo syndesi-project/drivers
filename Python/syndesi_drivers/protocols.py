@@ -33,6 +33,14 @@ class SCPI(Protocol):
             if self._adapter._port is None:
                 self._adapter._port = self.DEFAULT_PORT
 
+    def _to_bytearray(self, command):
+        if isinstance(command, str):
+            return command.encode('ASCII')
+        elif isinstance(command, bytes) or isinstance(command, bytearray):
+            return command
+        else:
+            raise ValueError(f'Invalid command type : {type(command)}')
+
     def _formatCommand(self, command):
         return command + self._end
     
@@ -42,11 +50,12 @@ class SCPI(Protocol):
                 raise ValueError(f"Invalid char '{c}' in command")
 
     def write(self, command : bytearray):
+        command = self._to_bytearray(command)
         self._checkCommand(command)
         self._adapter.write(self._formatCommand(command))
 
-
     def query(self, data : bytearray):
+        command = self._to_bytearray(command)
         self._adapter.flushRead()
         self.write(data)
         return self.read()

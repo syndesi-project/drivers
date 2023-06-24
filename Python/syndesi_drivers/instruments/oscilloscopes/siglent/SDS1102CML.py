@@ -21,4 +21,10 @@ class SDS1102CML(IOscilloscope):
         pass
 
     def set_coupling(self, channel : int, coupling : IOscilloscope.Coupling):
-        pass
+        coupling_match = {
+            IOscilloscope.Coupling.AC : 'A1M',
+            IOscilloscope.Coupling.DC : 'D1M',
+            IOscilloscope.Coupling.GND : 'GND',
+
+        }
+        self._prot.write(f'C{channel}:CPL {coupling_match[coupling]}')
