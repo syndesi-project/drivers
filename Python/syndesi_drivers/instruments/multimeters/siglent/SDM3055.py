@@ -1,5 +1,5 @@
 from .. import IAmmeter, IVoltmeter
-from syndesi.adapters import IAdapter, IP, USBVisa
+from syndesi.adapters import IAdapter, IP, VISA
 from ....protocols import SCPI
 
 # https://int.siglent.com/upload_file/user/SDM3055/SDM3055_RemoteManual_RC06035-E01A.pdf
@@ -12,11 +12,11 @@ class SDM3055(IVoltmeter, IAmmeter):
         Parameters
         ----------
         adpater : IAdapter
-            Adapter to use, both IP and USBVisa are allowed
+            Adapter to use, both IP and VISA are allowed
         """
         super().__init__()
 
-        assert isinstance(adapter, IP) or isinstance(adapter, USBVisa), "Invalid adapter"
+        assert isinstance(adapter, IP) or isinstance(adapter, VISA), "Invalid adapter"
         self._prot = SCPI(adapter)
 
 

@@ -3,7 +3,7 @@
 # 30.05.2023
 
 from .. import IOscilloscope
-from syndesi.adapters import IAdapter, Serial, USBVisa
+from syndesi.adapters import IAdapter, Serial, VISA
 from ....protocols import SCPI
 from enum import Enum
 import re
@@ -16,7 +16,7 @@ class SDS1102CML(IOscilloscope):
         super().__init__()
 
 
-        assert isinstance(adapter, Serial) or isinstance(adapter, USBVisa), "Invalid adapter"
+        assert isinstance(adapter, Serial) or isinstance(adapter, VISA), "Invalid adapter"
         self._prot = SCPI(adapter)
 
     def set_time_scale(self, seconds_per_div : float):

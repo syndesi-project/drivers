@@ -12,7 +12,7 @@ class SPD3303x(IMultiChannelPowersupplyDC):
     def __init__(self, adapter : IAdapter) -> None:
         super().__init__()
 
-        assert isinstance(adapter, USBVisa) or isinstance(adapter, IP), "Invalid adapter"
+        assert isinstance(adapter, VISA) or isinstance(adapter, IP), "Invalid adapter"
 
         self._prot = SCPI(adapter)
 
