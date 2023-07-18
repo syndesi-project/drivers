@@ -19,22 +19,41 @@ class SDM3055(IVoltmeter, IAmmeter):
         assert isinstance(adapter, IP) or isinstance(adapter, VISA), "Invalid adapter"
         self._prot = SCPI(adapter)
 
-
-    def measureDC(self) -> float:
+    def measure_ac_current(self) -> float:
         """
-        Make a DC voltage measurement
+        Make an AC current measurement and return the result
         """
-        self._prot.write(b'CONF:DC')
+        self._prot.write(b'CONF:CURR:AC')
         self._prot.write(b'INIT')
         self._prot.write(b'*TRG')
         output = float(self._prot.query(b'FETC?'))
         return output
-    
-    def measureAC(self) -> float:
+
+    def measure_dc_current(self) -> float:
         """
-        Make an AC voltage measurement
+        Make a DC current measurement and return the result
         """
-        self._prot.write(b'CONF:AC')
+        self._prot.write(b'CONF:CURR:DC')
+        self._prot.write(b'INIT')
+        self._prot.write(b'*TRG')
+        output = float(self._prot.query(b'FETC?'))
+        return output
+
+    def measure_ac_voltage(self) -> float:
+        """
+        Make an AC voltage measurement and return the result
+        """
+        self._prot.write(b'CONF:VOLT:AC')
+        self._prot.write(b'INIT')
+        self._prot.write(b'*TRG')
+        output = float(self._prot.query(b'FETC?'))
+        return output
+
+    def measure_dc_voltage(self) -> float:
+        """
+        Make a DC voltage measurement and return the result
+        """
+        self._prot.write(b'CONF:VOLT:DC')
         self._prot.write(b'INIT')
         self._prot.write(b'*TRG')
         output = float(self._prot.query(b'FETC?'))
