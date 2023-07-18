@@ -55,7 +55,7 @@ class SCPI(Protocol):
         self._adapter.write(self._formatCommand(command))
 
     def query(self, data : bytearray):
-        command = self._to_bytearray(command)
+        command = self._to_bytearray(data)
         self._adapter.flushRead()
         self.write(data)
         return self.read()
