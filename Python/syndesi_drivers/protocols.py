@@ -81,7 +81,6 @@ class RawCommands(Protocol):
         else:
             return self._adapter.read()
 
-
 class SCPI(Protocol):
     DEFAULT_PORT = 5025
     def __init__(self, adapter: IAdapter) -> None:
@@ -96,8 +95,7 @@ class SCPI(Protocol):
         self._end = b'\n'
 
         if isinstance(self._adapter, IP):
-            if self._adapter._port is None:
-                self._adapter._port = self.DEFAULT_PORT
+            self._adapter.set_default_port(self.DEFAULT_PORT)
 
     def _to_bytearray(self, command):
         if isinstance(command, str):
