@@ -19,16 +19,16 @@ class Raw(Protocol):
     def write(self, data : bytearray):
         self._adapter.write(data)
 
-    def query(self, data : bytearray):
+    def query(self, data : bytearray) -> bytearray:
         self._adapter.flushRead()
         self.write(data)
         return self.read()
 
-    def read(self):
+    def read(self) -> bytearray:
         return self._adapter.read()
 
 class RawCommands(Protocol):
-    def __init__(self, adapter : IAdapter, end='\n') -> None:
+    def __init__(self, adapter : IAdapter, end=b'\n') -> None:
         """
         Command-based protocol, with LF, CR or CRLF termination
 
@@ -41,9 +41,12 @@ class RawCommands(Protocol):
             Command termination, '\n' by default
         """
         super().__init__(adapter)
+
+        if not isinstance(end, bytes):
+            raise ValueError(f"end argument must be of type bytes, not {type(end)}")
         self._end = end
 
-    def _to_bytearray(self, command):
+    def _to_bytearray(self, command) -> bytearray:
         if isinstance(command, str):
             return command.encode('ASCII')
         elif isinstance(command, bytes) or isinstance(command, bytearray):
@@ -51,20 +54,20 @@ class RawCommands(Protocol):
         else:
             raise ValueError(f'Invalid command type : {type(command)}')
 
-    def _formatCommand(self, command):
+    def _formatCommand(self, command) -> bytearray:
         return command + self._end
 
     def write(self, command : bytearray):
         command = self._to_bytearray(command)
         self._adapter.write(self._formatCommand(command))
 
-    def query(self, data : bytearray):
+    def query(self, data : bytearray) -> bytearray:
         command = self._to_bytearray(data)
         self._adapter.flushRead()
         self.write(data)
         return self.read()
 
-    def read(self):
+    def read(self) -> bytearray:
         return self._adapter.read()
 
 
@@ -101,18 +104,18 @@ class SCPI(Protocol):
             if c in command:
                 raise ValueError(f"Invalid char '{c}' in command")
 
-    def write(self, command : bytearray):
+    def write(self, command : bytearray) -> None:
         command = self._to_bytearray(command)
         self._checkCommand(command)
         self._adapter.write(self._formatCommand(command))
 
-    def query(self, data : bytearray):
+    def query(self, data : bytearray) -> bytearray:
         command = self._to_bytearray(data)
         self._adapter.flushRead()
         self.write(data)
         return self.read()
 
-    def read(self):
+    def read(self) -> bytearray:
         return self._adapter.read()
 
 
