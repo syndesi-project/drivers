@@ -8,13 +8,65 @@ class Protocol:
 class Raw(Protocol):
     def __init__(self, adapter: IAdapter) -> None:
         """
-        Raw device, no presentation and application protocol
+        Raw device, no presentation and application layers
 
         Parameters
         ----------
         adapter : IAdapter
         """
         super().__init__(adapter)
+
+    def write(self, data : bytearray):
+        self._adapter.write(data)
+
+    def query(self, data : bytearray):
+        self._adapter.flushRead()
+        self.write(data)
+        return self.read()
+
+    def read(self):
+        return self._adapter.read()
+
+class RawCommands(Protocol):
+    def __init__(self, adapter : IAdapter, end='\n') -> None:
+        """
+        Command-based protocol, with LF, CR or CRLF termination
+
+        No presentation or application layers
+
+        Parameters
+        ----------
+        adapter : IAdapter
+        end : bytearray
+            Command termination, '\n' by default
+        """
+        super().__init__(adapter)
+        self._end = end
+
+    def _to_bytearray(self, command):
+        if isinstance(command, str):
+            return command.encode('ASCII')
+        elif isinstance(command, bytes) or isinstance(command, bytearray):
+            return command
+        else:
+            raise ValueError(f'Invalid command type : {type(command)}')
+
+    def _formatCommand(self, command):
+        return command + self._end
+
+    def write(self, command : bytearray):
+        command = self._to_bytearray(command)
+        self._adapter.write(self._formatCommand(command))
+
+    def query(self, data : bytearray):
+        command = self._to_bytearray(data)
+        self._adapter.flushRead()
+        self.write(data)
+        return self.read()
+
+    def read(self):
+        return self._adapter.read()
+
 
 class SCPI(Protocol):
     DEFAULT_PORT = 5025
