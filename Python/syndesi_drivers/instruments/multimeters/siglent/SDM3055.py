@@ -1,6 +1,6 @@
 from .. import IAmmeter, IVoltmeter
 from syndesi.adapters import IAdapter, IP, VISA
-from ....protocols import SCPI
+from syndesi.protocols import SCPI
 
 # https://int.siglent.com/upload_file/user/SDM3055/SDM3055_RemoteManual_RC06035-E01A.pdf
 

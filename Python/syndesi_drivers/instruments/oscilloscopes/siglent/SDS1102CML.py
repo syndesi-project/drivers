@@ -4,7 +4,7 @@
 
 from .. import IOscilloscope
 from syndesi.adapters import IAdapter, Serial, VISA
-from ....protocols import SCPI
+from syndesi.protocols import SCPI
 from enum import Enum
 import re
 

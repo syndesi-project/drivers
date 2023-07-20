@@ -2,7 +2,7 @@
 # Sébastien Deriaz
 # 02.04.2023
 
-from ....protocols import SCPI
+from syndesi.protocols import SCPI
 from ...powersupply import IMultiChannelPowersupplyDC
 from syndesi.adapters import *
 
