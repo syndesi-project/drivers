@@ -23,38 +23,38 @@ class SDM3055(IVoltmeter, IAmmeter):
         """
         Make an AC current measurement and return the result
         """
-        self._prot.write(b'CONF:CURR:AC')
-        self._prot.write(b'INIT')
-        self._prot.write(b'*TRG')
-        output = float(self._prot.query(b'FETC?'))
+        self._prot.write('CONF:CURR:AC')
+        self._prot.write('INIT')
+        self._prot.write('*TRG')
+        output = float(self._prot.query('FETC?'))
         return output
 
     def measure_dc_current(self) -> float:
         """
         Make a DC current measurement and return the result
         """
-        self._prot.write(b'CONF:CURR:DC')
-        self._prot.write(b'INIT')
-        self._prot.write(b'*TRG')
-        output = float(self._prot.query(b'FETC?'))
+        self._prot.write('CONF:CURR:DC')
+        self._prot.write('INIT')
+        self._prot.write('*TRG')
+        output = float(self._prot.query('FETC?'))
         return output
 
     def measure_ac_voltage(self) -> float:
         """
         Make an AC voltage measurement and return the result
         """
-        self._prot.write(b'CONF:VOLT:AC')
-        self._prot.write(b'INIT')
-        self._prot.write(b'*TRG')
-        output = float(self._prot.query(b'FETC?'))
+        self._prot.write('CONF:VOLT:AC')
+        self._prot.write('INIT')
+        self._prot.write('*TRG')
+        output = float(self._prot.query('FETC?'))
         return output
 
     def measure_dc_voltage(self) -> float:
         """
         Make a DC voltage measurement and return the result
         """
-        self._prot.write(b'CONF:VOLT:DC')
-        self._prot.write(b'INIT')
-        self._prot.write(b'*TRG')
-        output = float(self._prot.query(b'FETC?'))
+        self._prot.write('CONF:VOLT:DC')
+        self._prot.write('INIT')
+        self._prot.write('*TRG')
+        output = float(self._prot.query('FETC?'))
         return output
