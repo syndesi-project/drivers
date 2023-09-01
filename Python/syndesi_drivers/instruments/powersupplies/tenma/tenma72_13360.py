@@ -1,12 +1,11 @@
 from syndesi.adapters import Serial
 from syndesi.protocols.delimited import Delimited
-from syndesi_drivers.instruments.powersupply import IPowersupplyDC
+from syndesi_drivers.instruments.powersupplies import IPowersupplyDC
 from typing import Union, List
 from enum import Enum
 from syndesi.tools.types import is_number
 
-
-class Tenma72_13360(IPowersupplyDC):
+class Tenma72_13360(Driver, IPowersupplyDC):
     def __init__(self, adapter: Serial) -> None:
         """
         Tenma 72-13360 30V 15A power supply

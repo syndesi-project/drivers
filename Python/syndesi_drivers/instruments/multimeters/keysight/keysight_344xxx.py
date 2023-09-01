@@ -1,4 +1,4 @@
-from syndesi.adapters import IP, VISA
+from syndesi.adapters import IP, VISA, IAdapter
 from syndesi.protocols.scpi import SCPI
 from syndesi_drivers.instruments.multimeters import IMultimeter
 from typing import Union, List
@@ -53,7 +53,7 @@ RANGES = {
 DEFAULT_RESOLUTION_VALUE = 1.5e-6
 
 class Keysight34xxx(IMultimeter):
-    def __init__(self, adapter: IP, model : Model) -> None:
+    def __init__(self, adapter: IAdapter, model : Model) -> None:
         """
         Keysight 344xxx DMMs, compatible models are :
 
@@ -238,6 +238,8 @@ class Keysight34xxx(IMultimeter):
         samples : int
             Number of samples
         """
+        # TODO : Add trigger slope and trigger delay
+
         assert isinstance(function, Function), f"Invalid function type : {type(function)}"
         # Configure the function
         #self._prot.write(f'SENS:FUNC "{function.value}"')

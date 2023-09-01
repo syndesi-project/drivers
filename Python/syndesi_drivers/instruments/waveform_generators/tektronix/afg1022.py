@@ -18,7 +18,7 @@ class Unit(Enum):
     VRMS = 'VRMS'
     DBM = 'DBM'
 
-HIGH_IMPEDANCE_KEYWORD = 'INF'
+HIGH_IMPEDANCE_KEYWORD = 'HIGH'
 
 class AFG1022:
     def __init__(self, adapter: IAdapter) -> None:
@@ -84,6 +84,7 @@ class AFG1022:
     def set_function(self,
                      channel : int,
                      function : Function,
+                     duty_cycle : Union[float, None] = None,
                      name : str = None):
         """
         Set the waveform function for the desired channel
@@ -92,6 +93,8 @@ class AFG1022:
         ----------
         function : Function
         channel : int
+        duty_cycle : float
+            Duty-cycle in percent (pulse mode only)
         name : str
             For user mode only, name of waveform file or 'VOLATILE'
         """
@@ -105,6 +108,9 @@ class AFG1022:
                 raise ValueError("waveform name cannot be None")
         else:
             self._prot.write(f'SOUR{channel}:FUNC {function.value}')
+
+        if function == Function.PULSE and duty_cycle is not None:
+            self._prot.write(f'SOUR{channel}:PULS:DCYC {duty_cycle}')
 
     def set_phase(self, channel : int, phase : float, degrees : bool = False):
         """
@@ -153,94 +159,22 @@ class AFG1022:
         assert high >= low, f'Invalid low-high combination : {low}, {high}'
         self.set_amplitude_offset(channel, high - low, (low + high) / 2)
 
-    #########################################################################    
-
-    def set_frequency_sweep(self, channel : int, start : float, stop : float):
+    def set_output_load(self, channel : int, load : Union[str, float]):
         """
-        Set the frequency sweep for the desired channel
+        Set the output load for the desired channel
 
         Parameters
         ----------
         channel : int
-        start : float
-        stop : float
+        load : str, float
+            'HIGH' for high impedance
+            float value for anything else
         """
         self._check_channel(channel)
-        for n, s in [('start', start), ('stop', stop)]:
-            assert is_number(s), f"Invalid {n} type : {type(s)}"
-        cmd = 'FREQ' + ('' if channel == 1 else ':CH2')
-        self._prot.write(f'{cmd}:STAR {start}')
-        self._prot.write(f'{cmd}:STOP {stop}')
-
-    def set_output_load(self, channel : int, load : Union[float, str]):
-        """
-        Sets the output impedance of the specified channel
-
-        Parameters
-        ----------
-        channel : int
-        load : float or str
-            Ohm value or 'INF' for high impedance
-        """
-        self._check_channel(channel)
-        cmd = 'OUTP:LOAD' + '' if channel == 1 else ':CH2'
-        if isinstance(load, str):
-            assert load.upper() == HIGH_IMPEDANCE_KEYWORD, f"Invalid high-impedance value for load : {load}"
-            self._prot.write(f'{cmd} {HIGH_IMPEDANCE_KEYWORD}')
+        
+        if isinstance(load, str) and load.upper() == HIGH_IMPEDANCE_KEYWORD:
+            argument = 'INF'
         elif is_number(load):
-            self._prot.write(f'{cmd} {load}')
-        else:
-            raise ValueError(f"Invalid load type : {type(load)}")
-        
-    def set_output_polarity(self, channel : int, normal_nReversed : bool):
-        """
-        Sets the output polarity for the specified channel
+            argument = str(load)
 
-        Parameters
-        ----------
-        channel : int
-        normal_nReversed : bool 
-            True : normal
-            False : reversed
-        """
-        self._check_channel(channel)
-        cmd = 'OUTP:POL' + '' if channel == 1 else ':CH2'
-        self._prot.write(f'{cmd} {"NORM" if normal_nReversed else "INV"}')
-    
-    def set_output_sync(self, enabled : bool):
-        """
-        Enables of disables output sync (rear connector).
-        This is only available for CH1
-
-        Parameters
-        ----------
-        enabled : bool
-        """
-        self._prot.write(f'OUTP:SYNC {"ON" if enabled else "OFF"}')
-
-    def set_output_trigger_slope(self, positive : bool):
-        """
-        Select the edge of trigger output. If enabled, TTL-compatible
-        square wave with specified edge will be generated from the [Ext
-        Trig/FSK/Burst] connector on the rear panel when the sweep
-        starts.
-
-        Parameters
-        ----------
-        positive : bool
-            True : Rising edge
-            False : Falling edge
-        """
-        self._prot.write(f'OUTP:TRIG:SLOP {"POS" if positive else "NEG"}')
-    
-    def set_output_trigger(self, enabled : bool):
-        """
-        Enables or disables output trigger on the [Ext Trig/FSK/Burst]
-        connector on the rear panel when the sweep
-        starts.
-        
-        Parameters
-        ----------
-        enabled : bool        
-        """
-        self._prot.write(f'OUTP:TRIG {"ON" if enabled else "OFF"}')
+        self._prot.write(f'OUTP{channel}:IMP {argument}')
