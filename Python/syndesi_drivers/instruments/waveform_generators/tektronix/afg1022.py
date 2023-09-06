@@ -115,7 +115,7 @@ class AFG1022:
         self._check_channel(channel)
         assert isinstance(function, Function), f"Invalid function type : {type(function)}"
         # TODO : Add built-ins
-        if function == Function.USER:
+        if function == Function.ARBITRARY:
             if name is not None:
                 self._prot.write(f'SOUR{channel}:FUNC EFIL {name}')
             else:
