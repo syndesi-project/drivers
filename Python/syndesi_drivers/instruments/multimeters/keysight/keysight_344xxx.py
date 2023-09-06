@@ -1,6 +1,7 @@
 from syndesi.adapters import IP, VISA, IAdapter
 from syndesi.protocols.scpi import SCPI
 from syndesi_drivers.instruments.multimeters import IMultimeter
+from syndesi.tools.types import assert_number
 from typing import Union, List
 from enum import Enum
 from time import sleep
@@ -210,7 +211,10 @@ class Keysight34xxx(IMultimeter):
                                  nplc : float = DEFAULT_NPLC_VALUE,
                                  resolution : float = None,
                                  samples : int = 1,
-                                 trigger_source : Trigger = Trigger.IMMEDIATE
+                                 trigger_source : Trigger = Trigger.IMMEDIATE,
+                                 trigger_delay : float = None,
+                                 trigger_slope : bool = None,
+                                 sample_period : float = None
                                  ):
         """
         Selects the measurement function
@@ -237,15 +241,36 @@ class Keysight34xxx(IMultimeter):
             Measurement resolution (34450A)
         samples : int
             Number of samples
+        trigger_source : Trigger
+            Sets the trigger source (IMMEDIATE by default)
+        trigger_delay : float
+            Sets the trigger delay (34465A and 34470A only)
+        trigger_slop : bool
+            Sets the trigger slope (True for positive, False for negative)
+        sample_period : float
+            Sets the sampling interval (34465A and 34470A only)
         """
-        # TODO : Add trigger slope and trigger delay
 
         assert isinstance(function, Function), f"Invalid function type : {type(function)}"
         # Configure the function
         #self._prot.write(f'SENS:FUNC "{function.value}"')
         self._prot.write(f'CONF:{function.value}')
 
-        if self._model == Model._34450A:
+        # Set range
+        if RANGES[function] is not None:
+            assert rng in RANGES[function], f"Invalid range : {rng}"
+            if function == Function.CURRENT_DC or function == Function.CURRENT_AC:
+                if rng == 10:
+                    # Activate 10A terminals
+                    self._prot.write(f'SENS:{function.name}:TERM 10')
+                else:
+                    # Activate 3A terminals
+                    self._prot.write(f'SENS:{function.name}:TERM 3')
+                    self._prot.write(f'SENS:{function.name}:RANG {rng}')
+            else:
+                self._prot.write(f'SENS:{function.value}:RANG {rng}')
+
+        if self._model == Model._34450A and resolution is not None:
             # Resolution
             if resolution is not None:
                 assert isinstance(resolution, float), f"Invalid resolution type : {type(resolution)}"
@@ -254,22 +279,30 @@ class Keysight34xxx(IMultimeter):
             # NPLC
             assert nplc in NPLC_RANGES, f"Invalid NPLC value : {nplc}"
             self._prot.write(f'SENS:{function.value}:NPLC {nplc:.0f}')
-            for _ in range(5):
-                print(self._prot.query('SYST:ERR?'))
-        # Set range
-        if RANGES[function] is not None:
-            assert rng in RANGES[function], f"Invalid range : {rng}"
-            self._prot.write(f'SENS:{function.value}:RANG {rng}')
+        
         # Set samples count
-        if isinstance(samples, float):
-            samples = int(samples)
-        elif isinstance(samples, int):
-            # ok
-            pass
-        else:
-            raise ValueError(f"Invalid samples type : {samples}")
-        self._prot.write(f'SAMP:COUN {samples}')
+        assert_number(samples)
+        self._prot.write(f'SAMP:COUN {samples:.0f}')
 
-        # Set trigger
+        # Set trigger source
         assert isinstance(trigger_source, Trigger), f"Invalid trigger_source type : {type(trigger_source)}"
         self._prot.write(f'TRIG:SOUR {trigger_source.value}')
+
+        # Set trigger delay
+        if trigger_delay is not None:
+            assert_number(trigger_delay)
+            self._prot.write(f'TRIG:DEL {trigger_delay}')
+        
+        # Set trigger slope
+        if trigger_slope is not None:
+            self._prot.write(f'TRIG:SLOP {"POS" if trigger_slope else "NEG"}')
+        
+        if self._model in [Model._34465A, Model._34470A]:
+            # Set sampling rate
+            if sample_period is None:
+                # Set sampling rate to immediate (default)
+                self._prot.write('SAMP:SOUR IMM')
+            else:
+                self._prot.write('SAMP:SOUR TIM')
+                assert_number(sample_period)
+                self._prot.write(f'SAMP:TIM {sample_period:e}')
