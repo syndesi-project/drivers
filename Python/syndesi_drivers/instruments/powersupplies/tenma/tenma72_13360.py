@@ -5,7 +5,7 @@ from typing import Union, List
 from enum import Enum
 from syndesi.tools.types import is_number
 
-class Tenma72_13360(Driver, IPowersupplyDC):
+class Tenma72_13360(IPowersupplyDC):
     def __init__(self, adapter: Serial) -> None:
         """
         Tenma 72-13360 30V 15A power supply
@@ -19,6 +19,14 @@ class Tenma72_13360(Driver, IPowersupplyDC):
         assert isinstance(adapter, Serial), "Invalid adapter"
         self._prot = Delimited(adapter, termination='\n')
 
+    def test(self):
+        """
+        Test presence of the device
+        """
+        output = self._prot.query('*IDN?')
+        # Output is typically :
+        # Tenma ID : TENMA 72-13360 V2.2 SN:000003343070 
+        return ("Tenma ID" in output) or ("TENMA" in output)
     
     def set_current(self, amps: float):
         """

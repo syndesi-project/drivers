@@ -34,6 +34,20 @@ class AFG1022:
         assert isinstance(adapter, VISA), "Invalid adapter"
         self._prot = SCPI(adapter, end='\n')
 
+    def test(self):
+        """
+        Test presence of the device
+
+        Returns
+        -------
+        True if the device is present
+        False if the device doesn't respond or it is the wrong device
+        """
+        output = self._prot.query('*IDN?')
+        # Output is typically :
+        # TEKTRONIX,AFG1022,1703954,SCPI:99.0 FC:V1.2.1b
+        return "AFG1022" in output
+
     def _check_channel(self, channel : int):
         """
         Check the channel type and value
