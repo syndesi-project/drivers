@@ -190,5 +190,7 @@ class AFG1022:
             argument = 'INF'
         elif is_number(load):
             argument = str(load)
+        else:
+            raise ValueError(f"Invalid load type : {type(load)}")
 
         self._prot.write(f'OUTP{channel}:IMP {argument}')
