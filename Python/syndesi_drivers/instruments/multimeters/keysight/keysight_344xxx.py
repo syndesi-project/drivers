@@ -262,11 +262,11 @@ class Keysight34xxx(IMultimeter):
             if function == Function.CURRENT_DC or function == Function.CURRENT_AC:
                 if rng == 10:
                     # Activate 10A terminals
-                    self._prot.write(f'SENS:{function.name}:TERM 10')
+                    self._prot.write(f'SENS:{function.value}:TERM 10')
                 else:
                     # Activate 3A terminals
-                    self._prot.write(f'SENS:{function.name}:TERM 3')
-                    self._prot.write(f'SENS:{function.name}:RANG {rng}')
+                    self._prot.write(f'SENS:{function.value}:TERM 3')
+                    self._prot.write(f'SENS:{function.value}:RANG {rng}')
             else:
                 self._prot.write(f'SENS:{function.value}:RANG {rng}')
 
