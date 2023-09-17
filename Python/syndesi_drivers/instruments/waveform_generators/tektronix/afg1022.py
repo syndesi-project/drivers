@@ -5,7 +5,7 @@ from enum import Enum
 from syndesi.tools.types import is_number
 
 class Function(Enum):
-    SINUSOID = 'StairDown'
+    SINUSOID = 'SIN'
     SQUARE = 'SQU'
     RAMP = 'RAMP'
     PULSE = 'PULS'
