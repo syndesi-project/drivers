@@ -1,6 +1,7 @@
 from syndesi.adapters import IP
 from syndesi.protocols.delimited import Delimited
 from datetime import datetime, date, time
+from syndesi.tools.types import is_number, assert_number
 import re
 
 ERROR_PREFIX = 'NA:'
@@ -207,9 +208,8 @@ class SH242():
         -------
         values : dict
         """
-        assert isinstance(
-            program, int), f"Invalid program number type : {type(int)}"
-        output = self._query(f'PRGM DATA?,RAM:{program}')
+        assert_number(program)
+        output = self._query(f'PRGM DATA?,RAM:{program:d}')
         # Parse response : number_steps,<name>,COUNT,A(X.Y.Z),B(X.Y.Z),END(c)
         # 5,<PGM-1>,COUNT,A(1.3.10),B(0.0.0),END(OFF)
         pattern = r'([0-9]+),\s*<(\S+)>,\s*COUNT,\s*A\(([0-9]+).\s*([0-9]+).\s*([0-9]+)\),\s*B\(([0-9]+).\s*([0-9]+).\s*([0-9]+)\),\s*END\((\w+)\)'
@@ -252,11 +252,9 @@ class SH242():
             None if time signal is disabled, else the raw value (TODO : change this)
         pause_enabled : bool
         """
-        assert isinstance(
-            program, int), f"Invalid program number type : {type(program)}"
-        assert isinstance(
-            step, int), f"Invalid step number type : {type(step)}"
-        output = self._query(f'PRGM DATA?,RAM:{program},STEP{step}')
+        assert_number(program)
+        assert_number(step)
+        output = self._query(f'PRGM DATA?,RAM:{program:d},STEP{step:d}')
         # TODO : check this
         time_signal_enabled = 'RELAY ON' in output or 'RELAY OFF' in output
         if time_signal_enabled:
@@ -486,8 +484,8 @@ class SH242():
         ----------
         program : int
         """
-        assert isinstance(program, int)
-        self._query(f'PRGM,RUN,RAM:{program},STEP1')
+        assert_number(program)
+        self._query(f'PRGM,RUN,RAM:{program:d},STEP1')
     
     def skip_one_step(self):
         """
@@ -543,10 +541,10 @@ class SH242():
         if isinstance(temperature, str):
             if temperature.upper() == OFF_KEYWORD.upper():
                 self._prot.query(f'TEMP, SOFF')
-        elif isinstance(temperature, float) or isinstance(temperature, int):
+        elif is_number(temperature):
             self._prot.query(f'TEMP, S{temperature}')
         else:
-            raise ValueError(f"Invalid v type : {type(temperature)}")
+            raise ValueError(f"Invalid temperature type : {type(temperature)}")
 
 
     def set_humidity(self, humidity):
@@ -562,7 +560,7 @@ class SH242():
         if isinstance(humidity, str):
             if humidity.upper() == OFF_KEYWORD.upper():
                 self._prot.query(f'HUMI, SOFF')
-        elif isinstance(humidity, float) or isinstance(humidity, int):
+        elif is_number(humidity):
             self._prot.query(f'HUMI, S{humidity}')
         else:
             raise ValueError(f"Invalid humidity type : {type(humidity)}")
