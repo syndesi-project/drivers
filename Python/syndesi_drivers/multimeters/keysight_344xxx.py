@@ -4,7 +4,6 @@ from syndesi_drivers.instruments.multimeters import IMultimeter
 from syndesi.tools.types import assert_number
 from typing import Union, List
 from enum import Enum
-from time import sleep
 
 DEFAULT_NPLC_VALUE = 10
 AUTO_RANGE_KEYWORD = 'AUTO'
@@ -260,12 +259,17 @@ class Keysight34xxx(IMultimeter):
         if RANGES[function] is not None:
             assert rng in RANGES[function], f"Invalid range : {rng}"
             if function == Function.CURRENT_DC or function == Function.CURRENT_AC:
-                if rng == 10:
-                    # Activate 10A terminals
-                    self._prot.write(f'SENS:{function.value}:TERM 10')
+                if self._model in [Model._34461A, Model._34465A, Model._34470A]:
+                    # The terminals have to be specified manually
+                    if rng == 10:
+                        # Activate 10A terminals
+                        self._prot.write(f'SENS:{function.value}:TERM 10')
+                    else:
+                        # Activate 3A terminals
+                        self._prot.write(f'SENS:{function.value}:TERM 3')
+                        self._prot.write(f'SENS:{function.value}:RANG {rng}')
                 else:
-                    # Activate 3A terminals
-                    self._prot.write(f'SENS:{function.value}:TERM 3')
+                    # The terminals are choosen automatically
                     self._prot.write(f'SENS:{function.value}:RANG {rng}')
             else:
                 self._prot.write(f'SENS:{function.value}:RANG {rng}')
