@@ -270,9 +270,9 @@ class Keysight34xxx(IMultimeter):
             else:
                 self._prot.write(f'SENS:{function.value}:RANG {rng}')
 
-        if self._model == Model._34450A and resolution is not None:
-            # Resolution
+        if self._model == Model._34450A:
             if resolution is not None:
+                # Resolution
                 assert isinstance(resolution, float), f"Invalid resolution type : {type(resolution)}"
                 self._prot.write(f'{function.value}:RES {nplc:.0f}')
         else:
