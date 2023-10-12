@@ -1,5 +1,6 @@
 from syndesi.adapters import IP, VISA
 from syndesi.protocols.scpi import SCPI
+from syndesi.tools.types import assert_number
 
 # https://www.keysight.com/fr/en/assets/9018-03714/service-manuals/9018-03714.pdf?success=true
 
@@ -107,11 +108,26 @@ class Keysight33512B:
         assert isinstance(frequency, float) or isinstance(frequency, int), f"Invalid frequency type : {type(frequency)}"
         self._prot.write(f'SOUR{channel}:FREQ {frequency}')
 
-
+    def set_dc_value(self, channel : int, value : float, unit : str = VOLT_UNITS[0]):
+        """
+        Set the DC voltage value
+        Parameters
+        ----------
+        channel : int
+        value : float
+        unit : str
+            VPP, VRMS or DBM
+        """
+        self._prot.write(f'SOUR{channel}:VOLT:UNIT {unit}')
+        self._check_channel(channel)
+        assert_number(value)
+        self._prot.write(f'SOUR{channel}:VOLT:OFFS {value}')
 
     def set_amplitude_offset(self, channel : int, amplitude : float, offset : float, unit=VOLT_UNITS[0]):
         """
         Sets the amplitude and offset of the specified channel
+
+        Cannot be used for setting DC value, use .set_dc_value(channel, value)
 
         Parameters
         ----------
@@ -247,3 +263,20 @@ class Keysight33512B:
         """
         output = self._prot.query('*IDN?')
         return '33512B' in output
+
+
+    def set_autorange(self, channel : int, state : bool):
+        """
+        Enable or disable autoranging on the specified channel
+        To set a desired range
+        - set the output state to False
+        - enable autoranging
+        - configure the maximum voltage range
+        - disable autoranging
+        Parameters
+        ----------
+        channel : int
+        state : bool
+        """
+        self._check_channel(channel)
+        self._prot.write(f'SOUR{channel}:VOLT:RANG:AUTO {"ON" if state else "OFF"}')
