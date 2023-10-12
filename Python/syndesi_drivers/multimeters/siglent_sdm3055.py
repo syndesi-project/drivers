@@ -1,4 +1,4 @@
-from .. import IAmmeter, IVoltmeter
+from . import IAmmeter, IVoltmeter
 from syndesi.adapters import IAdapter, IP, VISA
 from syndesi.protocols import SCPI
 

@@ -2,7 +2,7 @@
 # Sébastien Deriaz
 # 30.05.2023
 
-from .. import IOscilloscope
+from . import IOscilloscope
 from syndesi.adapters import IAdapter, Serial, VISA
 from syndesi.protocols import SCPI
 from enum import Enum
