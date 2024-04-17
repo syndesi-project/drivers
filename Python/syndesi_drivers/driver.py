@@ -2,7 +2,7 @@ from abc import ABC, abstractclassmethod
 from syndesi.protocols import IProtocol
 
 
-class IDriver(ABC):
+class Driver(ABC):
     _prot : IProtocol
     @abstractclassmethod
     def test(self):
