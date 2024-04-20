@@ -12,7 +12,7 @@ class Tenma72_13360(IPowersupplyDC):
 
         Parameters
         ----------
-        adpater : IAdapter
+        adpater : Adapter
         """
         super().__init__()
 

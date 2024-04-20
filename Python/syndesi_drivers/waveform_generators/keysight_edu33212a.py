@@ -1,4 +1,4 @@
-from syndesi.adapters import IP, VISA, IAdapter
+from syndesi.adapters import IP, VISA, Adapter
 from syndesi.protocols.scpi import SCPI
 from typing import Union
 from enum import Enum
@@ -34,12 +34,12 @@ HIGH_IMPEDANCE_KEYWORD = 'HIGH'
 # All functions were tested on 25.09.2023
 
 class EDU33212A:
-    def __init__(self, adapter: IAdapter) -> None:
+    def __init__(self, adapter: Adapter) -> None:
         """
         Keysight EDU33212A arbitrary waveform generator
         Parameters
         ----------
-        adpater : IAdapter
+        adpater : Adapter
         """
         super().__init__()
 

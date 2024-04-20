@@ -1,4 +1,4 @@
-from syndesi.adapters import IP, VISA, IAdapter
+from syndesi.adapters import IP, VISA, Adapter
 from syndesi.protocols.scpi import SCPI
 from typing import Union, List
 from enum import Enum
@@ -21,13 +21,13 @@ class Unit(Enum):
 HIGH_IMPEDANCE_KEYWORD = 'HIGH'
 
 class AFG1022:
-    def __init__(self, adapter: IAdapter) -> None:
+    def __init__(self, adapter: Adapter) -> None:
         """
         Tektronix AFG1022 Arbitrary waveform generator
 
         Parameters
         ----------
-        adpater : IAdapter
+        adpater : Adapter
         """
         super().__init__()
 

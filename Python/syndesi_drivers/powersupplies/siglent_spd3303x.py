@@ -9,7 +9,7 @@ from syndesi.adapters import *
 from enum import Enum
 
 class SPD3303x(IMultiChannelPowersupplyDC):
-    def __init__(self, adapter : IAdapter) -> None:
+    def __init__(self, adapter : Adapter) -> None:
         super().__init__()
 
         assert isinstance(adapter, VISA) or isinstance(adapter, IP), "Invalid adapter"

@@ -3,7 +3,7 @@
 # 30.05.2023
 
 from . import IOscilloscope
-from syndesi.adapters import IAdapter, Serial, VISA
+from syndesi.adapters import Adapter, Serial, VISA
 from syndesi.protocols import SCPI
 from enum import Enum
 import re
@@ -12,7 +12,7 @@ import re
 # ACQW : Specifi
 
 class SDS1102CML(IOscilloscope):
-    def __init__(self, adapter : IAdapter) -> None:
+    def __init__(self, adapter : Adapter) -> None:
         super().__init__()
 
 

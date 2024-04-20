@@ -6,7 +6,7 @@ This package contains all the official Syndesi Drivers
 
 ```python
 class DeviceName(Interfaces):
-    def __init__(self, adapter : IAdapter) -> None:
+    def __init__(self, adapter : Adapter) -> None:
         """
         Device description
         """

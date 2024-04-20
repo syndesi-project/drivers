@@ -1,9 +1,9 @@
 from abc import ABC, abstractclassmethod
-from syndesi.protocols import IProtocol
+from syndesi.protocols import Protocol
 
 
 class Driver(ABC):
-    _prot : IProtocol
+    _prot : Protocol
     @abstractclassmethod
     def test(self):
         """

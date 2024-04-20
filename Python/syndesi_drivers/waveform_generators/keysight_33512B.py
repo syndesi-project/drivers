@@ -17,7 +17,7 @@ class Keysight33512B:
 
         Parameters
         ----------
-        adpater : IAdapter
+        adpater : Adapter
         """
         super().__init__()
 

@@ -1,4 +1,4 @@
-from syndesi.adapters import IP, VISA, IAdapter
+from syndesi.adapters import IP, VISA, Adapter
 from syndesi.protocols.scpi import SCPI
 from syndesi_drivers.instruments.multimeters import IMultimeter
 from syndesi.tools.types import assert_number
@@ -53,7 +53,7 @@ RANGES = {
 DEFAULT_RESOLUTION_VALUE = 1.5e-6
 
 class Keysight34xxx(IMultimeter):
-    def __init__(self, adapter: IAdapter, model : Model) -> None:
+    def __init__(self, adapter: Adapter, model : Model) -> None:
         """
         Keysight 344xxx DMMs, compatible models are :
 
@@ -65,7 +65,7 @@ class Keysight34xxx(IMultimeter):
 
         Parameters
         ----------
-        adpater : IAdapter
+        adpater : Adapter
         model : str
             One of the models above
         """

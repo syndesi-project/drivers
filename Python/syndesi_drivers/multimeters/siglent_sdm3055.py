@@ -1,17 +1,17 @@
 from . import IAmmeter, IVoltmeter
-from syndesi.adapters import IAdapter, IP, VISA
+from syndesi.adapters import Adapter, IP, VISA
 from syndesi.protocols import SCPI
 
 # https://int.siglent.com/upload_file/user/SDM3055/SDM3055_RemoteManual_RC06035-E01A.pdf
 
 class SDM3055(IVoltmeter, IAmmeter):
-    def __init__(self, adapter : IAdapter) -> None:
+    def __init__(self, adapter : Adapter) -> None:
         """
         Siglent SDM3055 5½ digit multimeter
 
         Parameters
         ----------
-        adpater : IAdapter
+        adpater : Adapter
             Adapter to use, both IP and VISA are allowed
         """
         super().__init__()

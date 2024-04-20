@@ -16,7 +16,7 @@ class Keithley2450():
 
         Parameters
         ----------
-        adpater : IAdapter
+        adpater : Adapter
         """
         super().__init__()
 
