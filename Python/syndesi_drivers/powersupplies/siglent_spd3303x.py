@@ -10,7 +10,7 @@ from syndesi.adapters import *
 from packaging.version import Version
 from typing import Union
 from enum import Enum
-from syndesi.tools.types import assert_number
+from syndesi.tools.types import assert_number, is_number
 from dataclasses import dataclass
 import struct
 
@@ -45,7 +45,7 @@ class SystemStatus:
     timer1_enabled: bool
     timer2_enabled: bool
     channel1_waveform_display: bool
-    channel2_waveform_dislpay: bool
+    channel2_waveform_display: bool
 
 
 class SiglentSPD3303xChannel(PowersupplyDC):
@@ -62,6 +62,8 @@ class SiglentSPD3303xChannel(PowersupplyDC):
     def measure_dc_current(self) -> float:
         """
         Return current measurement
+        
+        Status : ok
 
         Returns
         -------
@@ -74,6 +76,8 @@ class SiglentSPD3303xChannel(PowersupplyDC):
         """
         Return voltage measurement
 
+        Status : ok
+
         Returns
         -------
         voltage : float
@@ -85,17 +89,27 @@ class SiglentSPD3303xChannel(PowersupplyDC):
         """
         Return power measurement
 
+        Status : ok
+
         Returns
         -------
         power : float
         """
-        output = self._prot.query(f'MEAS:POW? CH{self._channel_number}')
+        output = self._prot.query(f'MEAS:POWE? CH{self._channel_number}')
         return float(output)
 
     def set_voltage(self, volts: float):
+        """
+        
+        Status : ok
+        """
         self._prot.write(f'CH{self._channel_number}:VOLT {volts:.3f}')
 
     def get_voltage(self) -> float:
+        """
+        
+        Status : ok
+        """
         self._prot.write(f'CH{self._channel_number}:VOLT?')
         output = self._prot.read()
         try:
@@ -105,9 +119,17 @@ class SiglentSPD3303xChannel(PowersupplyDC):
         return volts
 
     def set_current(self, amps: float):
+        """
+        
+        Status : ok
+        """
         self._prot.write(f'CH{self._channel_number}:CURR {amps:.3f}')
 
     def get_current(self) -> float:
+        """
+        
+        Status : ok
+        """
         self._prot.write(f'CH{self._channel_number}:CURR?')
         output = self._prot.read()
         try:
@@ -118,11 +140,17 @@ class SiglentSPD3303xChannel(PowersupplyDC):
 
     def set_output_state(self, state: bool):
         self._prot.write(
-            f'OUTP CH{self._channel_number} {"ON" if state else "OFF"}')
+            f'OUTP CH{self._channel_number},{"ON" if state else "OFF"}')
 
     def set_wave_display(self, state: bool):
         """
         Enable/disable the wave display
+
+        Status : ok
+
+        Parameters
+        ----------
+        state : bool
         """
         self._prot.write(
             f'OUTP:WAVE CH{self._channel_number},{"ON" if state else "OFF"}')
@@ -131,13 +159,15 @@ class SiglentSPD3303xChannel(PowersupplyDC):
         """
         Set timing parameters, including group(1-5), voltage, current and time
 
+        Status : ok
+
         Parameters
         ----------
         voltage : float or list
         current : float or list
         time : float or list
         """
-        if all([isinstance(x, float) for x in [group, voltage, current, time]]):
+        if all([is_number(x) for x in [group, voltage, current, time]]):
             # Make lists
             group = [group]
             voltage = [voltage]
@@ -155,6 +185,8 @@ class SiglentSPD3303xChannel(PowersupplyDC):
         """
         Query the voltage/current/time parameters of specified group
 
+        Status : ok
+
         Parameters
         ----------
         group : int
@@ -168,12 +200,14 @@ class SiglentSPD3303xChannel(PowersupplyDC):
         assert_number(group)
         output = self._prot.query(
             f'TIME:SET? CH{self._channel_number},{group}')
-        voltage, current, time = [float(x) for x in output.split(',')]
+        voltage, current, time = [float(x) for x in output.split(',') if x]
         return voltage, current, time
 
     def get_mode(self):
         """
         Return channel mode (constant voltage or constant current)
+
+        Status : ok
 
         Returns
         -------
@@ -210,6 +244,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
         """
         Set the operation mode
 
+        Status : ok
+
         Parameters
         ----------
         mode : OperationMode or str
@@ -227,6 +263,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
         """
         Save current state in nonvolatile memory
 
+        Status : ok
+
         Parameters
         ----------
         save_id : int
@@ -238,6 +276,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
     def recall(self, save_id: int):
         """
         Recall state that had been saved from nonvolatile memory
+
+        Status : ok
 
         Parameters
         ----------
@@ -251,6 +291,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
         """
         Select the channel that will be operated. This is not necessary to use either channel with this driver
 
+        Status : ok
+
         Parameters
         ----------
         channel_number : int
@@ -261,6 +303,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
     def get_instrument_channel(self):
         """
         Return the selected channel
+
+        Status : ok
 
         Returns
         -------
@@ -275,6 +319,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
         """
         Return sum of both channel power
 
+        Status : ok
+
         Returns
         -------
         power : float
@@ -287,6 +333,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
         """
         Query the current working state of the equipment
 
+        Status : ok
+
         Returns
         -------
         status : SystemStatus
@@ -294,9 +342,9 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
         code = int(self._prot.query('SYST:STAT?'), 16)
 
         operation_mode = {
-            0x01: OperationMode.INDEPENDENT,
-            0x10: OperationMode.PARALLEL,
-            0x11: OperationMode.SERIES
+            0b01: OperationMode.INDEPENDENT,
+            0b10: OperationMode.PARALLEL,
+            0b11: OperationMode.SERIES
         }
         status = SystemStatus(
             channel1_mode=ChannelMode.CONSTANT_CURRENT if (
@@ -317,6 +365,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
         """
         Return IP address
 
+        Status : ok
+
         Returns
         -------
         ip : str
@@ -326,6 +376,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
     def set_ip_address(self, ip: str):
         """
         Set IP address. This command is invalid when DHCP is enabled
+
+        Status : ok
 
         Parameters
         ----------
@@ -338,6 +390,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
         """
         Return subnet mask
 
+        Status : ok
+
         Returns
         -------
         mask : str
@@ -347,6 +401,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
     def set_subnet_mask(self, mask: str):
         """
         Set subnet mask
+
+        Status : ok
 
         Parameters
         ----------
@@ -358,6 +414,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
         """
         Return gateway
 
+        Status : ok
+
         Returns
         ----------
         gateway : str
@@ -367,6 +425,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
     def set_gateway(self, gateway: str):
         """
         Set gateway
+
+        Status : ok
 
         Parameters
         ----------
@@ -378,6 +438,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
         """
         Return DHCP status
 
+        Status : ok
+
         Returns
         -------
         dhcp : bool
@@ -388,6 +450,8 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
     def set_dhcp(self, dhcp: bool):
         """
         Set DHCP status
+
+        Status : ok
 
         Parameters
         ----------
