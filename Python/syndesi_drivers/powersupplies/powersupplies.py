@@ -46,7 +46,7 @@ class MultiChannelPowersupplyDC(ABC):
     # Provides power supply functions (multi channel)
 
     def __init__(self, n_channels : int) -> None:
-        super().__init__()
+        ABC.__init__(self) # TODO : Check if this is the right way
         self._n_channels = n_channels
 
     def _check_channel(self, channel):

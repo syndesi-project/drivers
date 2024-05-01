@@ -5,6 +5,7 @@
 
 from syndesi.protocols import SCPI, Protocol
 from . import MultiChannelPowersupplyDC, PowersupplyDC
+from ..scpi_driver import SCPIDriver
 from syndesi.adapters import *
 from packaging.version import Version
 from typing import Union
@@ -19,41 +20,44 @@ DEFAULT_TIMEOUT = Timeout(0.2, 0.1)
 class ChannelMode(Enum):
     CONSTANT_VOLTAGE = 0
     CONSTANT_CURRENT = 1
-    
+
 
 class OperationMode(Enum):
     INDEPENDENT = 'independant'
     SERIES = 'series'
     PARALLEL = 'parallel'
 
+
 _operation_mode_id = {
-    OperationMode.INDEPENDENT : 0,
-    OperationMode.SERIES : 1,
-    OperationMode.PARALLEL : 2
+    OperationMode.INDEPENDENT: 0,
+    OperationMode.SERIES: 1,
+    OperationMode.PARALLEL: 2
 }
+
 
 @dataclass
 class SystemStatus:
-    channel1_mode : ChannelMode
-    channel2_mode : ChannelMode
-    operation_mode : OperationMode
-    channel1_enabled : bool
-    channel2_enabled : bool
-    timer1_enabled : bool
-    timer2_enabled : bool
-    channel1_waveform_display : bool
-    channel2_waveform_dislpay : bool
+    channel1_mode: ChannelMode
+    channel2_mode: ChannelMode
+    operation_mode: OperationMode
+    channel1_enabled: bool
+    channel2_enabled: bool
+    timer1_enabled: bool
+    timer2_enabled: bool
+    channel1_waveform_display: bool
+    channel2_waveform_dislpay: bool
+
 
 class SiglentSPD3303xChannel(PowersupplyDC):
     VERSION = Version('1.0.0')
-    def __init__(self, adapter : Union[Adapter, Protocol], channel_number: int = None) -> None:
+
+    def __init__(self, adapter: Union[Adapter, Protocol], channel_number: int = None) -> None:
         super().__init__(channel_number)
         if isinstance(adapter, Protocol):
             self._prot = adapter
         else:
             adapter.set_default_timeout(DEFAULT_TIMEOUT)
             self._prot = SCPI(adapter)
-
 
     def measure_dc_current(self) -> float:
         """
@@ -65,7 +69,7 @@ class SiglentSPD3303xChannel(PowersupplyDC):
         """
         output = self._prot.query(f'MEAS:CURR? CH{self._channel_number}')
         return float(output)
-    
+
     def measure_dc_voltage(self) -> float:
         """
         Return voltage measurement
@@ -76,21 +80,19 @@ class SiglentSPD3303xChannel(PowersupplyDC):
         """
         output = self._prot.query(f'MEAS:VOLT? CH{self._channel_number}')
         return float(output)
-    
+
     def measure_dc_power(self) -> float:
         """
         Return power measurement
-        
+
         Returns
         -------
         power : float
         """
         output = self._prot.query(f'MEAS:POW? CH{self._channel_number}')
         return float(output)
-    
 
-
-    def set_voltage(self, volts : float):
+    def set_voltage(self, volts: float):
         self._prot.write(f'CH{self._channel_number}:VOLT {volts:.3f}')
 
     def get_voltage(self) -> float:
@@ -101,8 +103,8 @@ class SiglentSPD3303xChannel(PowersupplyDC):
         except ValueError as e:
             volts = None
         return volts
-    
-    def set_current(self, amps : float):
+
+    def set_current(self, amps: float):
         self._prot.write(f'CH{self._channel_number}:CURR {amps:.3f}')
 
     def get_current(self) -> float:
@@ -114,14 +116,16 @@ class SiglentSPD3303xChannel(PowersupplyDC):
             amps = None
         return amps
 
-    def set_output_state(self, state : bool):
-        self._prot.write(f'OUTP CH{self._channel_number} {"ON" if state else "OFF"}')
+    def set_output_state(self, state: bool):
+        self._prot.write(
+            f'OUTP CH{self._channel_number} {"ON" if state else "OFF"}')
 
-    def set_wave_display(self, state : bool):
+    def set_wave_display(self, state: bool):
         """
         Enable/disable the wave display
         """
-        self._prot.write(f'OUTP:WAVE CH{self._channel_number},{"ON" if state else "OFF"}')
+        self._prot.write(
+            f'OUTP:WAVE CH{self._channel_number},{"ON" if state else "OFF"}')
 
     def set_timer(self, group, voltage, current, time):
         """
@@ -141,15 +145,16 @@ class SiglentSPD3303xChannel(PowersupplyDC):
             time = [time]
         elif not all([isinstance(x, list) for x in [group, voltage, current, time]]):
             raise ValueError(f"Invalid input types")
-        
+
         for g, v, c, t in zip(group, voltage, current, time):
             assert 1 <= g <= 5, f'Invalid group value : {g}'
-            self._prot.write(f'TIME:SET CH{self._channel_number},{g},{v},{c},{t}')
-    
+            self._prot.write(
+                f'TIME:SET CH{self._channel_number},{g},{v},{c},{t}')
+
     def get_timer(self, group):
         """
         Query the voltage/current/time parameters of specified group
-        
+
         Parameters
         ----------
         group : int
@@ -160,7 +165,11 @@ class SiglentSPD3303xChannel(PowersupplyDC):
         current : float
         time : float
         """
-        # TODO
+        assert_number(group)
+        output = self._prot.query(
+            f'TIME:SET? CH{self._channel_number},{group}')
+        voltage, current, time = [float(x) for x in output.split(',')]
+        return voltage, current, time
 
     def get_mode(self):
         """
@@ -170,23 +179,34 @@ class SiglentSPD3303xChannel(PowersupplyDC):
         -------
         mode : ChannelMode
         """
-        # TODO : Find a way to get the mode here (even though it is declared in the main SPD3303X class)
-        
+        code = int(self._prot.query('SYST:STAT?'), 16)
+
+        mask = (0b0000000001 << (self._channel_number-1))
+
+        mode = ChannelMode.CONSTANT_CURRENT if (
+            code & mask) else ChannelMode.CONSTANT_VOLTAGE
+
+        return mode
 
 
-class SiglentSPD3303x(MultiChannelPowersupplyDC):
+class SiglentSPD3303x(MultiChannelPowersupplyDC, SCPIDriver):
     VERSION = Version('1.0.0')
-    def __init__(self, adapter : Adapter) -> None:
-        super().__init__(2)
 
-        assert isinstance(adapter, VISA) or isinstance(adapter, IP), "Invalid adapter"
+    def __init__(self, adapter: Adapter) -> None:
+        # TODO : Check if this is the right way
+        MultiChannelPowersupplyDC.__init__(self, 2)
+        assert isinstance(adapter, VISA) or isinstance(
+            adapter, IP), "Invalid adapter"
+        # TODO : Check if this is the right way
+        SCPIDriver.__init__(self, adapter)
 
-        self._prot = SCPI(adapter)
+    def test(self):
+        return 'SPD3303X' in self.get_identification()
 
     def channel(self, channel_number: int) -> SiglentSPD3303xChannel:
         return SiglentSPD3303xChannel(self._prot, channel_number=channel_number)
 
-    def set_operation_mode(self, mode : OperationMode):
+    def set_operation_mode(self, mode: OperationMode):
         """
         Set the operation mode
 
@@ -199,11 +219,11 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC):
         _id = _operation_mode_id[mode]
         self._prot.write(f'OUTP:TRACK {_id}')
 
-    def _check_save_id(self, save_id : int):
+    def _check_save_id(self, save_id: int):
         assert_number(save_id)
         assert 1 <= save_id <= 5, f'Invalid save_id value : {save_id}'
 
-    def save(self, save_id : int):
+    def save(self, save_id: int):
         """
         Save current state in nonvolatile memory
 
@@ -215,7 +235,7 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC):
         self._check_save_id(save_id)
         self._prot.write(f'*SAV {save_id}')
 
-    def recall(self, save_id : int):
+    def recall(self, save_id: int):
         """
         Recall state that had been saved from nonvolatile memory
 
@@ -227,7 +247,7 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC):
         self._check_save_id(save_id)
         self._prot.write(f'*RCL {save_id}')
 
-    def select_instrument_channel(self, channel_number : int):
+    def select_instrument_channel(self, channel_number: int):
         """
         Select the channel that will be operated. This is not necessary to use either channel with this driver
 
@@ -259,10 +279,9 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC):
         -------
         power : float
         """
-        output = sum([self.channel(i+1).measure_dc_power() for i in range(self._n_channels)])
+        output = sum([self.channel(i+1).measure_dc_power()
+                     for i in range(self._n_channels)])
         return output
-    
-    
 
     def get_system_status(self):
         """
@@ -272,4 +291,106 @@ class SiglentSPD3303x(MultiChannelPowersupplyDC):
         -------
         status : SystemStatus
         """
-        # TODO : Parse with struct
+        code = int(self._prot.query('SYST:STAT?'), 16)
+
+        operation_mode = {
+            0x01: OperationMode.INDEPENDENT,
+            0x10: OperationMode.PARALLEL,
+            0x11: OperationMode.SERIES
+        }
+        status = SystemStatus(
+            channel1_mode=ChannelMode.CONSTANT_CURRENT if (
+                code & 0b0000000001) else ChannelMode.CONSTANT_VOLTAGE,
+            channel2_mode=ChannelMode.CONSTANT_CURRENT if (
+                code & 0x0000000010) else ChannelMode.CONSTANT_VOLTAGE,
+            operation_mode=operation_mode[(code >> 2) & 0b11],
+            channel1_enabled=bool(code & 0b0000010000),
+            channel2_enabled=bool(code & 0b0000100000),
+            timer1_enabled=bool(code & 0b0001000000),
+            timer2_enabled=bool(code & 0b0010000000),
+            channel1_waveform_display=bool(code & 0b0100000000),
+            channel2_waveform_display=bool(code & 0b1000000000)
+        )
+        return status
+
+    def get_ip_address(self):
+        """
+        Return IP address
+
+        Returns
+        -------
+        ip : str
+        """
+        return self._prot.query('IP?')
+
+    def set_ip_address(self, ip: str):
+        """
+        Set IP address. This command is invalid when DHCP is enabled
+
+        Parameters
+        ----------
+        ip : str
+            format 192.168.1.1        
+        """
+        self._prot.write(f'IP {ip}')
+
+    def get_subnet_mask(self):
+        """
+        Return subnet mask
+
+        Returns
+        -------
+        mask : str
+        """
+        return self._prot.query('MASK?')
+
+    def set_subnet_mask(self, mask: str):
+        """
+        Set subnet mask
+
+        Parameters
+        ----------
+        mask : str
+        """
+        self._prot.write(f'MASK {mask}')
+
+    def get_gateway(self):
+        """
+        Return gateway
+
+        Returns
+        ----------
+        gateway : str
+        """
+        return self._prot.query('GATE?')
+
+    def set_gateway(self, gateway: str):
+        """
+        Set gateway
+
+        Parameters
+        ----------
+        gateway : str
+        """
+        self._prot.write(f'GATE {gateway}')
+
+    def get_dhcp(self):
+        """
+        Return DHCP status
+
+        Returns
+        -------
+        dhcp : bool
+        """
+        value = self._prot.query('DHCP?')
+        return 'on' in value.lower()
+
+    def set_dhcp(self, dhcp: bool):
+        """
+        Set DHCP status
+
+        Parameters
+        ----------
+        dhcp : bool
+        """
+        self._prot.write(f'DHCP {"ON" if dhcp else "OFF"}')
