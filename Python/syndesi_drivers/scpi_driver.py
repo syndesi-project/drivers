@@ -44,3 +44,15 @@ class SCPIDriver(Driver):
         version : str
         """
         return self._prot.query('SYST:VERS?')
+
+    def clear_status(self):
+        """
+        Clear event registers as well as error queue
+        """
+        self._prot.write('*CLS')
+
+    def reset(self):
+        """
+        Reset the instrument to factory state
+        """
+        self._prot.write('*RST')
