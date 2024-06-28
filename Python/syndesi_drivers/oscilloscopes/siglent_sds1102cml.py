@@ -2,7 +2,7 @@
 # Sébastien Deriaz
 # 30.05.2023
 
-from . import IOscilloscope
+from . import Oscilloscope
 from syndesi.adapters import Adapter, Serial, VISA
 from syndesi.protocols import SCPI
 from enum import Enum
@@ -11,7 +11,7 @@ import re
 
 # ACQW : Specifi
 
-class SDS1102CML(IOscilloscope):
+class SDS1102CML(Oscilloscope):
     def __init__(self, adapter : Adapter) -> None:
         super().__init__()
 
@@ -25,11 +25,11 @@ class SDS1102CML(IOscilloscope):
     def set_voltage_scale(self, channel : int, volts_per_div : float):
         pass
 
-    def set_coupling(self, channel : int, coupling : IOscilloscope.Coupling):
+    def set_coupling(self, channel : int, coupling : Oscilloscope.Coupling):
         coupling_match = {
-            IOscilloscope.Coupling.AC : 'A1M',
-            IOscilloscope.Coupling.DC : 'D1M',
-            IOscilloscope.Coupling.GND : 'GND',
+            Oscilloscope.Coupling.AC : 'A1M',
+            Oscilloscope.Coupling.DC : 'D1M',
+            Oscilloscope.Coupling.GND : 'GND',
 
         }
         self._prot.write(f'C{channel}:CPL {coupling_match[coupling]}')

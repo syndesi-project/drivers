@@ -1,4 +1,4 @@
-from . import IAmmeter, IVoltmeter
+from . import Multimeter
 from ..scpi_driver import SCPIDriver
 from syndesi.adapters import Adapter, IP, VISA
 from syndesi.protocols import SCPI
@@ -18,7 +18,7 @@ class Range(Enum):
                     if _range * (1-__RANGE_TOLERANCE) <= value <= _range * (1+__RANGE_TOLERANCE):
                         return _range      
 
-class ScannerCard(IVoltmeter, IAmmeter):
+class ScannerCard(Multimeter):
     class Function(Enum):
         VOLTAGE = 'DCV'
         VOLTAGE_AC = 'ACV'
@@ -285,7 +285,7 @@ class ScannerCard(IVoltmeter, IAmmeter):
 
 
 
-class SDM30x5(IVoltmeter, IAmmeter, SCPIDriver):
+class SDM30x5(Voltmeter, Ammeter, SCPIDriver):
     AUTO_RANGE = 'AUTO'
 
     class Function(Enum):
