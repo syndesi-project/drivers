@@ -6,10 +6,6 @@ from enum import Enum
 from typing import Union
 
 # https://int.siglent.com/upload_file/user/SDM3055/SDM3055_RemoteManual_RC06035-E01A.pdf
-class Model(Enum):
-    SDM3045X = 0
-    SDM3055 = 1
-    SDM3065X = 2
 
 __RANGE_TOLERANCE = 0.01 # 1%
 
@@ -46,13 +42,13 @@ class ScannerCard(IVoltmeter, IAmmeter):
     class CurrentRange(Range):
         _2A = '2A'
     
-    class CurrentAcRange(CurrentRange):
+    class CurrentAcRange(Range):
         pass
 
-    class VoltageAcRange(VoltageRange):
+    class VoltageAcRange(Range):
         pass
 
-    class FrequencyRange(VoltageRange):
+    class FrequencyRange(Range):
         pass
 
     class ResistanceRange(Range):
@@ -65,7 +61,7 @@ class ScannerCard(IVoltmeter, IAmmeter):
         _100M = '100MOHM'
         AUTO = 'AUTO'
     
-    class Resistance4Range(ResistanceRange):
+    class Resistance4Range(Range):
         pass
 
     class CapacitanceRange(Range):
@@ -307,9 +303,7 @@ class SDM30x5(IVoltmeter, IAmmeter, SCPIDriver):
         TEMPERATURE = 'TEMP'
 
     # Temperature types are common to all SDM30x5 multimeters as well as the scanner card
-    class TemperatureTransducer(ScannerCard.TemperatureTransducer):
-        pass
-    
+    TemperatureTransducer = ScannerCard.TemperatureTransducer
 
     class Impedance(Range):
         _10M = '10M'
@@ -320,7 +314,7 @@ class SDM30x5(IVoltmeter, IAmmeter, SCPIDriver):
         MIDDLE = 'MIDDLE'
         HIGH = 'HIGH'
 
-    def __init__(self, adapter : Adapter, model : Model) -> None:
+    def __init__(self, adapter : Adapter) -> None:
         """
         Siglent SDM3055 5½ digit multimeter
 
@@ -329,11 +323,22 @@ class SDM30x5(IVoltmeter, IAmmeter, SCPIDriver):
         adpater : Adapter
             Adapter to use, both IP and VISA are allowed
         """
-        super().__init__()
+        super().__init__(adapter)
         self._ranges = {}
+        self._model = None
 
         assert isinstance(adapter, IP) or isinstance(adapter, VISA), "Invalid adapter"
         self._prot = SCPI(adapter)
+
+    def test(self) -> bool:
+        """
+        Test if the instrument is up and running
+
+        Returns
+        -------
+        success : bool
+        """
+        return self._model in self.get_identification() 
 
     def abort(self):
         """
@@ -1169,8 +1174,9 @@ class SDM3045X(SDM30x5):
         SLOW = '10'
 
 
-    def __init__(self, adapter: Adapter, model: Model) -> None:
-        super().__init__(adapter, model)
+    def __init__(self, adapter: Adapter) -> None:
+        super().__init__(adapter)
+        self._model = 'SDM3045X'
         self._ranges = {
             self.Function.VOLTAGE : self.VoltageRange,
             self.Function.VOLTAGE_AC : self.VoltageRangeAC,
@@ -1241,8 +1247,9 @@ class SDM3055(SDM30x5):
         MIDDLE = '1'
         SLOW = '10'
 
-    def __init__(self, adapter: Adapter, model: Model) -> None:
-        super().__init__(adapter, model)
+    def __init__(self, adapter: Adapter) -> None:
+        super().__init__(adapter)
+        self._model = 'SDM3055'
         self._ranges = {
             self.Function.VOLTAGE : self.VoltageRange,
             self.Function.VOLTAGE_AC : self.VoltageRangeAC,
@@ -1324,8 +1331,9 @@ class SDM3065X(SDM30x5):
         _20Hz = '20Hz'
         _200Hz = '200Hz'
 
-    def __init__(self, adapter: Adapter, model: Model) -> None:
-        super().__init__(adapter, model)
+    def __init__(self, adapter: Adapter) -> None:
+        super().__init__(adapter)
+        self._model = 'SDM3065X'
         self._ranges = {
             self.Function.VOLTAGE : self.VoltageRange,
             self.Function.VOLTAGE_AC : self.VoltageRangeAC,
