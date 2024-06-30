@@ -1,4 +1,4 @@
-from . import Multimeter
+from .multimeters import Multimeter
 from ..scpi_driver import SCPIDriver
 from syndesi.adapters import Adapter, IP, VISA
 from syndesi.protocols import SCPI
@@ -285,7 +285,7 @@ class ScannerCard(Multimeter):
 
 
 
-class SDM30x5(Voltmeter, Ammeter, SCPIDriver):
+class SDM30x5(SCPIDriver):
     AUTO_RANGE = 'AUTO'
 
     class Function(Enum):
@@ -958,7 +958,9 @@ class SDM30x5(Voltmeter, Ammeter, SCPIDriver):
         -------
         ip : str
         """
-        return self._prot.query('SYST:COMM:LAN:IPAD? CURR')
+        output = self._prot.query('SYST:COMM:LAN:IPAD? CURR')
+        # Remove quotes
+        return output.replace('"', '')
 
     def set_static_ip_address(self, ip : str):
         """

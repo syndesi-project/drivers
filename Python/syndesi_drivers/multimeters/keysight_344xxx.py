@@ -1,6 +1,6 @@
 from syndesi.adapters import IP, VISA, Adapter
 from syndesi.protocols.scpi import SCPI
-from syndesi_drivers.instruments.multimeters import IMultimeter
+from .multimeters import Multimeter
 from syndesi.tools.types import assert_number
 from typing import Union, List
 from enum import Enum
