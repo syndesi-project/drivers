@@ -8,10 +8,10 @@ from syndesi.adapters import Adapter
 from syndesi.protocols import SCPI
 
 class SCPIDriver(Driver):
-    def __init__(self, adapter : Adapter) -> None:
+    def __init__(self, adapter : Adapter, termination : str = '\n') -> None:
         super().__init__()
 
-        self._prot = SCPI(adapter)
+        self._prot = SCPI(adapter, send_termination=termination)
 
     # Standard SCPI commands
     def get_identification(self):

@@ -27,8 +27,6 @@ def test_voltage():
     global mm
     # Run a voltage measurement and see if the value is valid
     voltage = mm.measure_dc_voltage()
-    
-
 
 def test_ip(adapter_ip_address):
     global mm
