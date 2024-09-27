@@ -82,9 +82,11 @@ class Keysight33512B:
 
         self._prot.write(f'SOUR{channel}:FUNC {waveform}')
     
-    def set_arbitrary_template(self, channel : int, filename : str):
+    def set_arbitrary_file(self, channel : int, filename : str):
         """
-        Sets the arbitrary template (filename) to use
+        Selects an arbitrary waveform (.arb/.barb) or sequence (.seq) that has
+        previously been loaded into volatile memory for the channel specified
+        with load_arbitrary_waveform or load_memory_to_volatile
 
         Parameters
         ----------
@@ -92,7 +94,6 @@ class Keysight33512B:
         filename : str
         """
         self._check_channel(channel)
-        assert isinstance(filename, str), f"Invalid filename type : {type(filename)}"
         self._prot.write(f'SOUR{channel}:FUNC:ARB {filename}')
         
     def set_frequency(self, channel : int, frequency : float):
@@ -280,3 +281,142 @@ class Keysight33512B:
         """
         self._check_channel(channel)
         self._prot.write(f'SOUR{channel}:VOLT:RANG:AUTO {"ON" if state else "OFF"}')
+
+    def get_volatile_catalog(self, channel):
+        """
+        Returns the contents of volatile waveform memory, including arbitrary
+        waveforms and sequences for the specified channel
+
+        Parameters
+        ----------
+        channel : int
+        """
+        # Output like : '"EXP_RISE","TEST"'
+        self._check_channel(channel)
+        output = self._prot.query(f'SOUR{channel}:DATA:VOL:CAT?')
+        catalog = []
+        if ',' in output:
+            catalog += [x.replace('"', '') for x in output.split(',')]
+        return catalog
+    
+    def clear_volatile_memory(self, channel : int):
+        """
+        Clears waveform memory for the specified channel and reloads the default waveform.
+        
+        Parameters
+        ----------
+        channel : int
+        """
+        self._prot.write(f'SOUR{channel}:DATA:VOL:CLE')
+
+    def load_arbitrary_waveform(self, channel : int, name : str, points : list, dac=False, overwrite=False):
+        """
+        Downloads integer values representing DAC codes between -32768 and +32767(dac=True)
+        or floating point values (dac=False) into waveform volatile memory
+        Load an arbitrary waveform in memory
+
+        Call load_from_memory()
+
+        Parameters
+        ----------
+        channel : int
+        name : str
+            Name of the arbitrary waveform
+        points : list or np.array
+        dac : bool
+            True : points are raw DAC values (-32768 to 32767)
+            False (default) : points are -1.0 to +1.0
+        overwrite : bool
+            Overwrite existing file
+        """
+        self._check_channel(channel)
+        # Check if the file already exists (all names are uppercased)
+        if name.upper() in self.get_volatile_catalog(channel):
+            if overwrite:
+                self.clear_volatile_memory(channel)
+            else:
+                raise RuntimeError(f"File {name} already exists. To ignore, set overwrite=True")
+
+        RANGE = (-32767, 32767) if dac else (-1.0, 1.0)
+        assert min(points) >= RANGE[0] and max(points) <= RANGE[1], f"Invalid points range ({min(points)} to {max(points)})"
+        command = f'SOUR{channel}:DATA:ARB'
+        if dac:
+            command += ':DAC'
+            points_list = [f'{p:.0f}' for p in points]
+        else:
+            points_list = [f'{p}' for p in points]
+        command += f' {name},{",".join(points_list)}'
+        self._prot.write(command)
+
+    def load_memory_to_volatile(self, channel : int, path : str):
+        """
+        Loads the specified arb segment(.arb/.barb) or arb sequence (.seq) file in INTERNAL or USB memory into
+        volatile memory for the specified channel.
+        """
+        self._check_channel(channel)
+        self._prot.write(f'MMEM:LOAD:DATA{channel} \"{path}\"')
+
+
+    def set_burst_state(self, channel : int, state : bool, mode : str = 'triggered', n_cycles : int = 1, start_phase : float = 0, burst_period : float = None):
+        """
+        Enables or disables burst mode.
+
+        Output phase is set to 0 when burst is enabled.
+
+        Set the trigger source with set_trigger_source
+
+        Parameters
+        ----------
+        channel : int
+        state : bool
+        mode : str
+            'triggered' or 'gated'
+        n_cycles : int
+            Number of cycles
+        """
+        self._check_channel(channel)
+        self._prot.write(f'SOUR{channel}:BURS:STAT {1 if state else 0}')
+        if state:
+            assert mode in ['triggered', 'gated'], f"Invalid mode : {mode}"
+            self._prot.write(f'SOUR{channel}:BURS:MODE {mode}')
+            self._prot.write(f'SOUR{channel}:BURS:NCYC {n_cycles}')
+            self._prot.write(f'SOUR{channel}:BURS:PHAS {start_phase}')
+            if burst_period is not None:
+                self._prot.write(f'SOUR{channel}:BURS:INT:PER {burst_period}')
+
+    def set_trigger_source(self, channel : int, source : str):
+        """
+        Selects the trigger source for sequence, list, burst or sweep. The instrument accepts an immediate or
+        timed internal trigger, an external hardware trigger from the rear-panel Ext Trig connector, or a software
+        (bus) trigger.
+        
+        Parameters
+        ----------
+        channel : int
+        source : str
+            'immediate', 'external', 'timer' or 'bus'
+        """
+        self._check_channel(channel)
+        assert source in ['immediate', 'external', 'timer', 'bus']
+        self._prot.write(f'TRIG{channel}:SOUR {source}')
+
+    def set_arbitrary_sample_rate(self, channel : int, sample_rate : float):
+        """
+        Sets the sample rate for the arbitrary waveform.
+
+        Parameters
+        ----------
+        channel : int
+        sample_rate : float
+        """
+        self._check_channel(channel)
+        self._prot.write(f'SOUR{channel}:FUNC:ARB:SRAT {sample_rate}')
+            
+    def sync_phase(self):
+        """
+        Simultaneously resets all phase generators in the instrument, including the modulation phase
+        generators, to establish a common, internal phase zero reference point. This command does not affect
+        PHASe setting of either channel; it simply establishes phase difference between channels as the sum of
+        channel 1 and channel 2 sources.
+        """
+        self._prot.write('PHAS:SYNC')
