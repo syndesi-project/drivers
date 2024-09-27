@@ -18,6 +18,75 @@ def _check_response(query, response):
     pass
 
 
+
+# This is a hack at the moment to listen continuously for data from the MRCL700
+# Position and speed updates can be received at any time.
+class AsynchronousDelimited(Delimited):
+    def __init__(self, adapter: Adapter, termination='\n', format_response=True, encoding: str = 'utf-8', timeout: Timeout = ...) -> None:
+        super().__init__(adapter, termination, format_response, encoding, timeout)
+
+
+    def query(self, command: str) -> str:
+
+
+        return super().query(command)
+    
+
+    def read_thread(self, positions : dict, speeds : dict, prot : Delimited, updates : dict, messages_queue : Queue, stop : list):
+        SPEED_PATTERN = '$(\w)1,([0-9.]+)'
+        #STATUS_PATTERN = '(\w+):([0-9A-Za-z]+),([0-9\-.]+)(?:,([0-9\-]+),([01]))?'
+        STATUS_PATTERN = '(\w+):([0-9A-Za-z]+),([0-9\-.]+),([0-9\-]+),([01])'
+
+        def parse_and_set(positions : dict, speeds : dict, data):
+            """
+            Parse the command and return its letter and True if it is a status update,
+            False if it is a speed update
+
+            If the command cannot be parsed, ('',None) is returned
+            Returns
+            """
+            # Check status first
+            match = re.match(STATUS_PATTERN, data)
+            if match is not None:
+                letter = match.group(1)
+                id = match.group(2)
+                position = float(match.group(3))
+                if match.group(4) is not None:
+                    step_number = int(match.group(4))
+                if match.group(5) is not None:
+                    homed = bool(int(match.group(5)))
+
+                positions[letter] = position
+                print(f'->Status {position}')
+                return letter, True
+
+            match = re.match(SPEED_PATTERN, data)
+            if match is not None:
+                letter = match.group(1)
+                speed = float(match.group(2))
+                speeds[letter] = speed
+                print(f'->Speed {speed}')
+                return letter, False
+            return '', None
+
+        while not stop[0]:
+            try:
+                data = prot.read(timeout=Timeout(response=1, on_response='error'))
+            except TimeoutException:
+                pass
+            else:
+                print(f'Parsing "{data}" ...', end='')
+                letter, is_status = parse_and_set(positions, speeds, data)
+                if letter:
+                    print(f'Success : {letter}')
+                    # Parsing was a success, set the update flag
+                    updates['positions' if is_status else 'speeds'][letter].set()
+                else:
+                    print('Fail, put in the queue')
+                    # Parsing failed, put the data in the queue
+                    messages_queue.put(data)
+
+
 class Actuator:
     def __init__(self, protocol : Delimited, updates : dict, messages_queue : Queue, letter : str, limits : tuple) -> None:
         self._letter = letter
@@ -630,59 +699,7 @@ class MicroqubicMrcl700(Driver):
         self.stop_thread()
         self._prot._adapter.close()
 
-    def read_thread(self, positions : dict, speeds : dict, prot : Delimited, updates : dict, messages_queue : Queue, stop : list):
-        SPEED_PATTERN = '$(\w)1,([0-9.]+)'
-        #STATUS_PATTERN = '(\w+):([0-9A-Za-z]+),([0-9\-.]+)(?:,([0-9\-]+),([01]))?'
-        STATUS_PATTERN = '(\w+):([0-9A-Za-z]+),([0-9\-.]+),([0-9\-]+),([01])'
-
-        def parse_and_set(positions : dict, speeds : dict, data):
-            """
-            Parse the command and return its letter and True if it is a status update,
-            False if it is a speed update
-
-            If the command cannot be parsed, ('',None) is returned
-            Returns
-            """
-            # Check status first
-            match = re.match(STATUS_PATTERN, data)
-            if match is not None:
-                letter = match.group(1)
-                id = match.group(2)
-                position = float(match.group(3))
-                if match.group(4) is not None:
-                    step_number = int(match.group(4))
-                if match.group(5) is not None:
-                    homed = bool(int(match.group(5)))
-
-                positions[letter] = position
-                print(f'->Status {position}')
-                return letter, True
-
-            match = re.match(SPEED_PATTERN, data)
-            if match is not None:
-                letter = match.group(1)
-                speed = float(match.group(2))
-                speeds[letter] = speed
-                print(f'->Speed {speed}')
-                return letter, False
-            return '', None
-
-        while not stop[0]:
-            try:
-                data = prot.read(timeout=Timeout(response=1, on_response='error'))
-            except TimeoutException:
-                pass
-            else:
-                print(f'Parsing "{data}" ...', end='')
-                letter, is_status = parse_and_set(positions, speeds, data)
-                if letter:
-                    print(f'Success : {letter}')
-                    # Parsing was a success, set the update flag
-                    updates['positions' if is_status else 'speeds'][letter].set()
-                else:
-                    print('Fail, put in the queue')
-                    # Parsing failed, put the data in the queue
-                    messages_queue.put(data)
+    
 
 
     def test(self):
