@@ -59,7 +59,7 @@ class LinearActuator(Actuator):
         speed : int
             Percentage (-100 to 100)
         """
-        self._prot.write(f'$X1,{speed:d}')
+        self._prot.write(f'$X1,{speed:.0f}')
 
     def move_relative(self, speed : int, distance : float):
         """
@@ -72,7 +72,7 @@ class LinearActuator(Actuator):
         distance : float
             Distance in millimiters
         """
-        self._prot.write(f'${self._letter}2,{speed:d},{distance:.3f}')
+        self._prot.write(f'${self._letter}2,{speed:.0f},{distance:.3f}')
 
     def move_absolute(self, speed : int, position : float):
         """
@@ -84,7 +84,7 @@ class LinearActuator(Actuator):
             Percentage (1-100)
         position : float
         """
-        self._prot.write(f'${self._letter}3,{speed:d},{position:.3f}')
+        self._prot.write(f'${self._letter}3,{speed:.0f},{position:.3f}')
 
     def move_relative_steps(self, speed : int, steps : int):
         """
@@ -96,7 +96,7 @@ class LinearActuator(Actuator):
             Percentage (1-100)
         steps : int
         """
-        self._prot.write(f'${self._letter}4,{speed:d},{steps:d}')
+        self._prot.write(f'${self._letter}4,{speed:.0f},{steps:d}')
 
     def auto_home(self):
         """
@@ -104,8 +104,6 @@ class LinearActuator(Actuator):
         """
         query = f'${self._letter}5'
         self._prot.write(query)
-        
-        _check_response(query, response)
 
     def status(self):
         """
@@ -159,7 +157,7 @@ class RotaryActuator(Actuator):
         speed : int
             Percentage (-100 to 100)
         """
-        self._prot.write(f'$X1,{speed:d}')
+        self._prot.write(f'$X1,{speed:.0f}')
 
     def move_relative(self, speed : int, angle : float):
         """
@@ -172,7 +170,7 @@ class RotaryActuator(Actuator):
         angle : float
             Angle in degrees
         """
-        self._prot.write(f'${self._letter}2,{speed:d},{angle:.3f}')
+        self._prot.write(f'${self._letter}2,{speed:.0f},{angle:.3f}')
 
     def move_absolute(self, speed : int, angle : float):
         """
@@ -184,7 +182,7 @@ class RotaryActuator(Actuator):
             Percentage (1-100)
         angle : float
         """
-        self._prot.write(f'${self._letter}3,{speed:d},{angle:.3f}')
+        self._prot.write(f'${self._letter}3,{speed:.0f},{angle:.3f}')
 
     def move_relative_steps(self, speed : int, steps : int):
         """
@@ -196,7 +194,7 @@ class RotaryActuator(Actuator):
             Percentage (1-100)
         steps : int
         """
-        self._prot.write(f'${self._letter}4,{speed:d},{steps:d}')
+        self._prot.write(f'${self._letter}4,{speed:.0f},{steps:d}')
 
     def auto_home(self):
         """
@@ -225,6 +223,7 @@ class RotaryActuator(Actuator):
         print(f'response : {response}')
         _check_response(query, response)
         # Read the data
+        print('Waiting for data...')
         data = self._messages_queue.get()
         print(f'data : {data}')
         pattern = f'{self._letter}:(\w+),([0-9.]+)'
@@ -248,7 +247,7 @@ class RingIllumination:
         Disable all colors, use set_colors instead
         """
         query = '$c7'
-        self._prot.write(query)
+        response = self._prot.query(query)
         
         _check_response(query, response)
 
@@ -257,7 +256,7 @@ class RingIllumination:
         Enable all colors, use set_colors instead
         """
         query = '$c8'
-        self._prot.write(query)
+        response = self._prot.query(query)
         
         _check_response(query, response)
 
@@ -280,7 +279,7 @@ class RingIllumination:
         }
         for letter, color in colors_and_letters.items():
             query = f'$c{1 if color else 0},{letter}'
-            self._prot.write(query)
+            response = self._prot.query(query)
             
             _check_response(query, response)
 
@@ -289,18 +288,18 @@ class RingIllumination:
         Turn on ring illumination
         """
         query = '$c1'
-        self._prot.write(query)
+        response = self._prot.query(query)
         
-        assert query == response
+        _check_response(query, response)
 
     def off(self):
         """
         TUrn off ring illumination
         """
         query = '$c0'
-        self._prot.write(query)
+        response = self._prot.query(query)
         
-        assert query == response
+        _check_response(query, response)
 
     def adjust_intensity(self, percentage):
         """
@@ -311,7 +310,7 @@ class RingIllumination:
         percentage : int
         """
         query = f'$c2,{percentage:d}'
-        self._prot.write(query)
+        response = self._prot.query(query)
         
         _check_response(query, response)
     
@@ -330,7 +329,9 @@ class RingIllumination:
         for l in leds:
             assert 1 <= l <= 8
             query = f'$c3,{l},{1 if status else 0}'
-        self._prot.write(query)
+        response = self._prot.query(query)
+
+        _check_response(query, response)
         
 
     def enable_all_leds(self):
@@ -338,7 +339,7 @@ class RingIllumination:
         Enable all leds
         """
         query = '$c4'
-        self._prot.write(query)
+        response = self._prot.query(query)
         
         _check_response(query, response)
 
@@ -347,7 +348,7 @@ class RingIllumination:
         Disable all leds (the device is still ON, but all LEDs are disabled)
         """
         query = '$c5'
-        self._prot.write(query)
+        response = self._prot.query(query)
         
         _check_response(query, response)
     
@@ -367,7 +368,7 @@ class RingIllumination:
             white
         """
         query = '$c6'
-        self._prot.write(query)
+        response = self._prot.query(query)
         
         _check_response(query, response)
         # Read the status data
@@ -397,7 +398,7 @@ class MatrixIllumination:
         Turn on matrix illumination
         """
         query = '$a1'
-        self._prot.write(query)
+        response = self._prot.query(query)
         
         _check_response(query, response)
 
@@ -406,7 +407,7 @@ class MatrixIllumination:
         TUrn off ring illumination
         """
         query = '$a0'
-        self._prot.write(query)
+        response = self._prot.query(query)
         
         _check_response(query, response)
 
@@ -419,7 +420,7 @@ class MatrixIllumination:
         percentage : int
         """
         query = f'$a2,{percentage:d}'
-        self._prot.write(query)
+        response = self._prot.write(query)
         
         _check_response(query, response)
     
@@ -438,7 +439,7 @@ class MatrixIllumination:
         for l in columns:
             assert 1 <= l <= 10
             query = f'$a3,{l},{1 if status else 0}'
-            self._prot.write(query)
+            response = self._prot.write(query)
             
             _check_response(query, response)
 
@@ -447,7 +448,7 @@ class MatrixIllumination:
         Enable all columns
         """
         query = '$a4'
-        self._prot.write(query)
+        response = self._prot.write(query)
         
         _check_response(query, response)
 
@@ -456,7 +457,7 @@ class MatrixIllumination:
         Disable all columns (the device is still ON, but all LEDs are disabled)
         """
         query = '$a5'
-        self._prot.write(query)
+        response = self._prot.write(query)
         
         _check_response(query, response)
     
@@ -600,6 +601,8 @@ class MicroqubicMrcl700(Driver):
 
         # Accessories
         self.ring_illumination = RingIllumination(self._prot)
+        self.matrix_illumination = MatrixIllumination(self._prot)
+        self.spot_illumination = SpotIllumination(self._prot)
         self.A = RotaryActuator(self._prot, self._updates, self._messages_queue, 'A', (-90, 90))
         self.B = RotaryActuator(self._prot, self._updates, self._messages_queue, 'B', (-90, 90))
         self.C = LinearActuator(self._prot, self._updates, self._messages_queue, 'C', (0, 120))
@@ -609,11 +612,11 @@ class MicroqubicMrcl700(Driver):
         self.Z = LinearActuator(self._prot, self._updates, self._messages_queue, 'Z', (0, 120))
 
         #self._positions = {getattr(self, k).get_position() for k in self.ACTUATORS}
-        for k in self.ACTUATORS:
-            try:
-                self._positions[k] = getattr(self, k).get_position()
-            except Exception:
-                pass
+        # for k in self.ACTUATORS:
+        #     try:
+        #         self._positions[k] = getattr(self, k).get_position()
+        #     except Exception:
+        #         pass
             #sleep(1)
         
 
@@ -629,7 +632,8 @@ class MicroqubicMrcl700(Driver):
 
     def read_thread(self, positions : dict, speeds : dict, prot : Delimited, updates : dict, messages_queue : Queue, stop : list):
         SPEED_PATTERN = '$(\w)1,([0-9.]+)'
-        STATUS_PATTERN = '(\w):([0-9A-Za-z]),([0-9\-.]+),([0-9\-]+),([01])'
+        #STATUS_PATTERN = '(\w+):([0-9A-Za-z]+),([0-9\-.]+)(?:,([0-9\-]+),([01]))?'
+        STATUS_PATTERN = '(\w+):([0-9A-Za-z]+),([0-9\-.]+),([0-9\-]+),([01])'
 
         def parse_and_set(positions : dict, speeds : dict, data):
             """
@@ -645,9 +649,13 @@ class MicroqubicMrcl700(Driver):
                 letter = match.group(1)
                 id = match.group(2)
                 position = float(match.group(3))
-                homed = bool(int(match.group(4)))
+                if match.group(4) is not None:
+                    step_number = int(match.group(4))
+                if match.group(5) is not None:
+                    homed = bool(int(match.group(5)))
 
                 positions[letter] = position
+                print(f'->Status {position}')
                 return letter, True
 
             match = re.match(SPEED_PATTERN, data)
@@ -655,6 +663,7 @@ class MicroqubicMrcl700(Driver):
                 letter = match.group(1)
                 speed = float(match.group(2))
                 speeds[letter] = speed
+                print(f'->Speed {speed}')
                 return letter, False
             return '', None
 
@@ -664,7 +673,7 @@ class MicroqubicMrcl700(Driver):
             except TimeoutException:
                 pass
             else:
-                print(f'Parsing {data}...', end='')
+                print(f'Parsing "{data}" ...', end='')
                 letter, is_status = parse_and_set(positions, speeds, data)
                 if letter:
                     print(f'Success : {letter}')
@@ -674,26 +683,7 @@ class MicroqubicMrcl700(Driver):
                     print('Fail, put in the queue')
                     # Parsing failed, put the data in the queue
                     messages_queue.put(data)
-                
-                #     # Manage each value
-                    
-                #     # TODO : Add parse
-                # else:
-                #     N : int
-                #     N = request_queue.get()
-                #     # Read everything while previous read buffer is not empty
-                #     # Add the last N (specified in request queue), to the data queue
-                #     commands = [data]
-                #     while (not prot._adapter.previous_read_buffer_empty()) or len(commands) < N:
-                #        commands.append(prot.read(timeout=Timeout(response=None)))
-                #     # Once everything is loaded in the list, get the N last ones and
-                #     # parse the rest
-                #     # Process the commands in order
-                #     for i, c in enumerate(commands):
-                #         if len(commands) - i > N:
-                #             parse_and_set(positions, speeds, c)
-                #         else:
-                #             data_queue.put(c)
+
 
     def test(self):
         """
@@ -714,7 +704,7 @@ class MicroqubicMrcl700(Driver):
         query = '$*5'
         self._prot.write(query)
         
-        _check_response(query, response)
+        #_check_response(query, response)
 
     def emergency_stop(self):
         """
@@ -723,7 +713,7 @@ class MicroqubicMrcl700(Driver):
         query = '$*0'
         self._prot.write(query)
         
-        _check_response(query, response)
+        #_check_response(query, response)
 
     def set_status_led_intensity(self, percentage):
         """
@@ -732,7 +722,7 @@ class MicroqubicMrcl700(Driver):
         query = f'$*8,{percentage:d}'
         self._prot.write(query)
         
-        _check_response(query, response)
+        #_check_response(query, response)
 
     def move_absolute(self, positions : dict, sync : bool = False):
         """
@@ -758,7 +748,9 @@ class MicroqubicMrcl700(Driver):
         times = {}
         positions = positions.copy()
         # Find the longest time. This is used for syncing the actuators (if used)
+        print('Getting positions...')
         times = {k : (p - getattr(self, k).get_position()) / self.MAX_SPEEDS[k] for k, (p, _) in positions.items()}
+        print(f'Times : {times}')
         longest_time = max(times.values())
         for k, (p, s) in positions.items():
             # Check if everything is doable
